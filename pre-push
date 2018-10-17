@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# Chris Mazzullo Oct 9 2018
+#
+# Prints out the commits that are about to be pushed.  Called by "git
+# push" after it has checked the remote status, but before anything
+# has been pushed.  If this script exits with a non-zero status
+# nothing will be pushed.
+#
+# Useful if you frequently paste the output of "git log --pretty=oneline"
+# into Squish issues after pushing
+
+remote="$1"
+url="$2"
+
+z40=0000000000000000000000000000000000000000
+
+while read local_ref local_sha remote_ref remote_sha
+do
+    if [ "$local_sha" = $z40 ]
+    then
+	# Handle delete
+	:
+    else
+	if [ "$remote_sha" = $z40 ]
+	then
+	    # New branch, examine all commits since trunk
+	    range="trunk..$local_sha"
+	else
+	    # Update to existing branch, examine new commits
+	    range="$remote_sha..$local_sha"
+	fi
+
+	echo "pre-push: New commits being pushed:"
+	git rev-list "$range" --pretty=oneline
+    fi
+done
+
+exit 0

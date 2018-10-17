@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# Adds the issue number to the front of the commit message
+#
+# Chris Mazzullo Oct. 9 2018
+
+
+COMMIT_MSG_FILEPATH=$1
+BRANCH=$(git symbolic-ref --short HEAD)
+
+# extract leading numbers from the branch name:
+ISSUE_NUM=$(echo $BRANCH | sed -E 's/^([0-9]*).*/\1/')
+
+if [[ "$BRANCH" =~ ^[0-9].* ]]  # if the branch has leading numbers
+then
+    echo "prepare-commit-msg: Adding issue number to branch name."
+    # insert the issue number at the start of the message file:
+    sed -i "1s/^/ISSUE $ISSUE_NUM - /" $COMMIT_MSG_FILEPATH
+else
+    echo 'prepare-commit-msg: Not an issue branch'
+fi
+
+exit 0

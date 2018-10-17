@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+# Chris Mazzullo Oct. 9 2018
+#
+# Runs flake8 on all changed files, only commits if they are pep8
+# compliant
+
+
+if git rev-parse --verify HEAD >/dev/null 2>&1
+then
+    against=HEAD
+else
+    # Initial commit: diff against an empty tree object
+    against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+fi
+
+CHANGED_FILES=$(git diff --staged --name-only HEAD)
+if [ ! -z "$CHANGED_FILES" ]
+then
+    echo "pre-commit: Searching for nonascii characters"
+    if RESULT=$( grep -THn -P '[^[:ascii:]]' $CHANGED_FILES )
+    then
+	echo "pre-commit: Non-ascii character(s) found:"
+	echo
+	echo "$RESULT"
+	echo
+	echo "pre-commit: aborting"
+	exit 1
+    fi
+    echo "pre-commit: No non-ascii character(s) found"
+fi
+
+CHANGED_PY_FILES="" # Stores changed files with the extension ".py"
+for file in $CHANGED_FILES
+do
+    if echo $file | grep -q '.*.py'
+    then
+	CHANGED_PY_FILES="$CHANGED_PY_FILES $file"
+    fi
+done
+if [ ! -z "$CHANGED_PY_FILES" ]
+then
+    echo "pre-commit: Running flake8"
+    if RESULT=$( flake8 $CHANGED_PY_FILES )
+    then
+	echo "pre-commit: Files are PEP8 compliant"
+    else
+	echo "pre-commit: PEP8 violations found:"
+	echo
+	echo "$RESULT"
+	echo
+	echo "pre-commit: aborting"
+	exit 1
+    fi
+fi
+
+exit 0
