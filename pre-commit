@@ -6,50 +6,29 @@
 # compliant
 
 
-if git rev-parse --verify HEAD >/dev/null 2>&1
-then
-    against=HEAD
-else
-    # Initial commit: diff against an empty tree object
-    against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
-fi
-
-CHANGED_FILES=$(git diff --staged --name-only HEAD)
+CHANGED_FILES=$(git diff --cached --name-only)
 if [ ! -z "$CHANGED_FILES" ]
 then
-    echo "pre-commit: Searching for nonascii characters"
+    printf "pre-commit: Searching for nonascii characters\n"
     if RESULT=$( grep -THn -P '[^[:ascii:]]' $CHANGED_FILES )
     then
-	echo "pre-commit: Non-ascii character(s) found:"
-	echo
-	echo "$RESULT"
-	echo
-	echo "pre-commit: aborting"
+	printf "pre-commit: Non-ascii character(s) found:\n$RESULT\n"
+	printf "pre-commit: aborting\n"
 	exit 1
     fi
-    echo "pre-commit: No non-ascii character(s) found"
+    printf "pre-commit: No non-ascii character(s) found\n"
 fi
 
-CHANGED_PY_FILES="" # Stores changed files with the extension ".py"
-for file in $CHANGED_FILES
-do
-    if echo $file | grep -q '.*.py'
-    then
-	CHANGED_PY_FILES="$CHANGED_PY_FILES $file"
-    fi
-done
+CHANGED_PY_FILES=$(git diff --cached --name-only | grep '\.py$')
 if [ ! -z "$CHANGED_PY_FILES" ]
 then
-    echo "pre-commit: Running flake8"
+    printf "pre-commit: Running flake8 on:\n$CHANGED_PY_FILES\n"
     if RESULT=$( flake8 $CHANGED_PY_FILES )
     then
-	echo "pre-commit: Files are PEP8 compliant"
+	printf "pre-commit: Files are PEP8 compliant\n"
     else
-	echo "pre-commit: PEP8 violations found:"
-	echo
-	echo "$RESULT"
-	echo
-	echo "pre-commit: aborting"
+	printf "pre-commit: PEP8 violations found:\n$RESULT\n\n"
+	printf "pre-commit: aborting\n"
 	exit 1
     fi
 fi
