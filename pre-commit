@@ -1,9 +1,11 @@
 #!/bin/sh
 #
-# Chris Mazzullo Oct. 9 2018
+# Chris Mazzullo Apr. 29 2020
 #
-# Runs flake8 on all changed files, only commits if they are pep8
-# compliant
+# Pre-commit runs:
+# - non-ascii checker on all changed files
+# - isort on all changed .py files
+# - flake8 on all changed .py files
 
 
 CHANGED_FILES=$(git diff --cached --name-only)
@@ -22,6 +24,9 @@ fi
 CHANGED_PY_FILES=$(git diff --cached --name-only | grep '\.py$')
 if [ ! -z "$CHANGED_PY_FILES" ]
 then
+    printf "pre-commit: Running isort on:\n$CHANGED_PY_FILES\n"
+    isort $CHANGED_PY_FILES
+
     printf "pre-commit: Running flake8 on:\n$CHANGED_PY_FILES\n"
     if RESULT=$( flake8 $CHANGED_PY_FILES )
     then
